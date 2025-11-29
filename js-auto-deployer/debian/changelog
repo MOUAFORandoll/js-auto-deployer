@@ -1,7 +1,0 @@
-js-auto-deployer (1.0.0-1) unstable; urgency=medium
-
-  * Version initiale
-  * Déploiement automatisé pour projets JavaScript/TypeScript
-  * Support PM2, Git, notifications email
-
- -- MOUAFO RANFOLL <hari.randoll@gmail.com>  Sat, 29 Nov 2025 20:38:57 +0100

@@ -1,9 +1,0 @@
-# Liste des fichiers à installer
-# Format: source destination
-
-scripts/* /opt/js-auto-deployer/scripts/
-config/* /etc/js-auto-deployer/config/
-install.sh /opt/js-auto-deployer/
-configure.sh /opt/js-auto-deployer/
-README.md /opt/js-auto-deployer/
-QUICKSTART.md /opt/js-auto-deployer/
