@@ -1,0 +1,113 @@
+# Configuration pour API NestJS
+
+project:
+  name: "nestjs-api"
+  description: "API REST NestJS"
+  framework: "nestjs"
+  version: "1.0.0"
+
+repository:
+  path: "/var/www/nestjs-api"
+  branch: "main"
+  git_url: "https://github.com/user/nestjs-api.git"
+
+process:
+  name: "nestjs-api"
+  instances: 1
+  exec_mode: "fork"
+  max_memory_restart: "1G"
+  watch: false
+  ignore_watch: ["node_modules", "logs", "*.log"]
+
+scripts:
+  build: |
+    npm ci --only=production
+    npm run build
+  
+  start: |
+    PORT=3003 pm2 start dist/main.js --name nestjs-api
+  
+  start_dev: |
+    PORT=3003 pm2 start npm --name nestjs-api -- start:dev
+  
+  pre_deploy: |
+    echo "Préparation du déploiement NestJS..."
+    npm ci --only=production
+  
+  post_deploy: |
+    echo "Déploiement NestJS terminé"
+
+environment:
+  NODE_ENV: "production"
+  PORT: "3003"
+  # Variables NestJS spécifiques
+  # DATABASE_URL: "postgresql://user:pass@localhost:5432/db"
+  # JWT_SECRET: "your-jwt-secret"
+  # REDIS_URL: "redis://localhost:6379"
+
+notifications:
+  email: true
+  slack: false
+  webhook: ""
+
+health_check:
+  enabled: true
+  url: "http://localhost:3003/health"
+  timeout: 30
+  retries: 3
+  interval: 60
+
+monitoring:
+  enabled: true
+  alerts:
+    memory_threshold: 85
+    cpu_threshold: 80
+    response_time_threshold: 3000
+  metrics:
+    - "memory_usage"
+    - "cpu_usage"
+    - "response_time"
+    - "request_rate"
+    - "error_rate"
+    - "connection_count"
+
+deploy:
+  auto_deploy: true
+  timeout: 300
+
+nestjs:
+  # Configuration NestJS spécifique
+  build_command: "npm run build"
+  start_command: "node dist/main"
+  dist_folder: "dist"
+  main_file: "dist/main.js"
+  
+  # Modules NestJS
+  modules:
+    - "DatabaseModule"
+    - "AuthModule"
+    - "UsersModule"
+    - "ApiModule"
+  
+  # Configuration TypeScript
+  typescript:
+    experimentalDecorators: true
+    emitDecoratorMetadata: true
+  
+  # Variables d'environnement NestJS
+  env_prefix: "NEST_"
+  
+  # Configuration Swagger/OpenAPI
+  swagger:
+    enabled: true
+    path: "/api/docs"
+    title: "NestJS API"
+    description: "Documentation de l'API"
+    version: "1.0"
+
+metadata:
+  enabled: true
+  auto_start: true
+  priority: 9
+  tags: ["backend", "nestjs", "api", "typescript"]
+  owner: "backend-team@votredomaine.com"

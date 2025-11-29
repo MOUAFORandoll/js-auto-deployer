@@ -1,0 +1,109 @@
+# Configuration pour application Angular
+
+project:
+  name: "angular-app"
+  description: "Application Angular"
+  framework: "angular"
+  version: "1.0.0"
+
+repository:
+  path: "/var/www/angular-app"
+  branch: "main"
+  git_url: "https://github.com/user/angular-app.git"
+
+process:
+  name: "angular-app"
+  instances: 1
+  exec_mode: "fork"
+  max_memory_restart: "500M"
+  watch: false
+  ignore_watch: ["node_modules", "dist", "logs"]
+
+scripts:
+  build: |
+    npm ci --only=production
+    npm run build -- --configuration production
+  
+  start: |
+    pm2 serve dist/angular-app 3004 --name angular-app --spa
+  
+  pre_deploy: |
+    echo "Préparation du déploiement Angular..."
+    npm ci --only=production
+  
+  post_deploy: |
+    echo "Déploiement Angular terminé"
+
+environment:
+  NODE_ENV: "production"
+  PORT: "3004"
+  # Variables Angular spécifiques
+  # API_URL: "https://api.votredomaine.com"
+  # ENVIRONMENT: "production"
+
+notifications:
+  email: true
+  slack: false
+  webhook: ""
+
+health_check:
+  enabled: true
+  url: "http://localhost:3004"
+  timeout: 30
+  retries: 3
+  interval: 60
+
+monitoring:
+  enabled: true
+  alerts:
+    memory_threshold: 80
+    cpu_threshold: 80
+    response_time_threshold: 3000
+  metrics:
+    - "memory_usage"
+    - "cpu_usage"
+    - "response_time"
+
+deploy:
+  auto_deploy: true
+  timeout: 300
+
+angular:
+  # Configuration Angular spécifique
+  build_command: "npm run build -- --configuration production"
+  dist_folder: "dist/angular-app"
+  
+  # Version Angular
+  version: 15+  # Compatible Angular 15+
+  
+  # Mode de build
+  build_optimizer: true
+  source_maps: false
+  
+  # Configuration du serveur
+  server:
+    port: 3004
+    host: "0.0.0.0"
+    
+  # Headers Angular optimisés
+  headers:
+    "Cache-Control": "public, max-age=31536000"
+    "X-Content-Type-Options": "nosniff"
+    "X-Frame-Options": "DENY"
+    "X-XSS-Protection": "1; mode=block"
+    
+  # Configuration PWA (si applicable)
+  pwa:
+    enabled: false
+    service_worker: true
+    
+  # Configuration AOT et Ivy
+  aot: true
+  ivy: true
+
+metadata:
+  enabled: true
+  auto_start: true
+  priority: 10
+  tags: ["frontend", "angular", "spa", "typescript"]
+  owner: "frontend-team@votredomaine.com"

@@ -1,0 +1,85 @@
+# Configuration pour application React
+# Framework: React, Create React App, Vite, Next.js (SPA mode)
+
+project:
+  name: "react-app"
+  description: "Application React"
+  framework: "react"
+  version: "1.0.0"
+
+repository:
+  path: "/var/www/react-app"
+  branch: "main"
+  git_url: "https://github.com/user/react-app.git"
+
+process:
+  name: "react-app"
+  instances: 1
+  exec_mode: "fork"
+  max_memory_restart: "500M"
+  watch: false
+  ignore_watch: ["node_modules", "logs"]
+
+scripts:
+  build: |
+    npm ci --only=production
+    npm run build
+  
+  start: |
+    pm2 serve dist 3001 --name react-app --spa
+  
+  pre_deploy: |
+    echo "Préparation du déploiement React..."
+    npm ci --only=production
+  
+  post_deploy: |
+    echo "Déploiement React terminé"
+
+environment:
+  NODE_ENV: "production"
+  PORT: "3001"
+
+notifications:
+  email: true
+  slack: false
+  webhook: ""
+
+health_check:
+  enabled: true
+  url: "http://localhost:3001"
+  timeout: 30
+  retries: 3
+  interval: 60
+
+monitoring:
+  enabled: true
+  alerts:
+    memory_threshold: 80
+    cpu_threshold: 80
+    response_time_threshold: 3000
+  metrics:
+    - "memory_usage"
+    - "cpu_usage"
+    - "response_time"
+
+deploy:
+  auto_deploy: true
+  timeout: 300
+
+react:
+  build_command: "npm run build"
+  dist_folder: "dist"
+  spa_mode: true
+  server:
+    port: 3001
+    host: "0.0.0.0"
+  headers:
+    "Cache-Control": "public, max-age=31536000"
+    "X-Content-Type-Options": "nosniff"
+
+metadata:
+  enabled: true
+  auto_start: true
+  priority: 10
+  tags: ["frontend", "react", "spa"]
+  owner: "dev-team@votredomaine.com"

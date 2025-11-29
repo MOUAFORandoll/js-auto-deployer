@@ -1,0 +1,114 @@
+# Configuration générale JS Auto Deployer
+# Modifiez ces valeurs selon vos besoins
+
+# Configuration email pour les notifications
+email:
+  enabled: false
+  to: "admin@votredomaine.com"
+  from: "deploy@votredomaine.com"
+  smtp_host: "mail.votredomaine.com"
+  smtp_port: 465
+  smtp_user: "deploy@votredomaine.com"
+  smtp_pass: "votre_mot_de_passe"
+
+# Configuration Slack pour les notifications (optionnel)
+slack:
+  enabled: false
+  webhook_url: ""
+  channel: "#deployments"
+  username: "JS Auto Deployer"
+
+# Configuration générale du système
+general:
+  # Niveau de logging (DEBUG, INFO, WARN, ERROR)
+  log_level: "INFO"
+  
+  # Taille maximum des fichiers de log
+  max_log_size: "10M"
+  
+  # Répertoires
+  www_dir: "/var/www"
+  log_dir: "/var/log/js-auto-deployer"
+  config_dir: "/etc/js-auto-deployer/config"
+  
+  # Configuration PM2
+  pm2_save_on_stop: true
+  pm2_watch: false
+  
+  # Timeout pour les opérations (en secondes)
+  deploy_timeout: 600
+  
+  # Nombre maximum de tentatives en cas d'échec
+  max_retry_attempts: 3
+  
+  # Nettoyage automatique des logs (en jours)
+  log_retention_days: 30
+
+# Configuration de sécurité
+security:
+  # Vérifier les certificats SSL
+  verify_ssl: true
+  
+  # Utiliser un utilisateur non-root pour PM2
+  pm2_user: "www-data"
+  
+  # Permissions des fichiers de log
+  log_file_mode: "644"
+  
+# Configuration des notifications
+notifications:
+  # Événements pour lesquels envoyer des notifications
+  events:
+    - "deploy_success"
+    - "deploy_failure"
+    - "service_down"
+    - "high_memory_usage"
+  
+  # Template pour les messages
+  templates:
+    success_subject: "✅ Déploiement réussi: {{project_name}}"
+    failure_subject: "❌ Échec du déploiement: {{project_name}}"
+    success_message: "Le projet {{project_name}} a été déployé avec succès en {{duration}}s"
+    failure_message: "Le déploiement du projet {{project_name}} a échoué: {{error_message}}"
+
+# Configuration de monitoring
+monitoring:
+  # Health check automatique
+  health_check:
+    enabled: true
+    timeout: 30
+    retries: 3
+    interval: 60
+  
+  # Métriques à surveiller
+  metrics:
+    - "memory_usage"
+    - "cpu_usage"
+    - "response_time"
+    - "error_rate"
+  
+  # Seuils d'alerte
+  alerts:
+    memory_threshold: 80  # Pourcentage
+    cpu_threshold: 80     # Pourcentage
+    response_time_threshold: 5000  # Millisecondes
+
+# Configuration des hooks
+hooks:
+  # Scripts à exécuter avant/après déploiement
+  pre_deploy_script: ""
+  post_deploy_script: ""
+  
+  # Webhooks à appeler
+  webhooks:
+    deploy_start: ""
+    deploy_success: ""
+    deploy_failure: ""
+
+# Configuration des sauvegardes
+backup:
+  enabled: false
+  schedule: "0 2 * * *"  # CRON format: tous les jours à 2h
+  retention_days: 7
+  include_logs: false
+  include_configs: true
