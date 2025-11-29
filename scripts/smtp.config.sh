@@ -312,7 +312,7 @@ main() {
         
         install_msmtp
         create_msmtp_config
-        update_fastpay_config
+        update_js_auto_deployer_config
         test_configuration
     else
         show_menu

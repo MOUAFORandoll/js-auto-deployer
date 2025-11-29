@@ -1,0 +1,13 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: js-auto-deployer
+Source: https://github.com/votre-org/js-auto-deployer
+
+Files: *
+Copyright: $(date +%Y) Votre Nom
+License: MIT
+
+License: MIT
+ MIT License
+ .
+ Permission is hereby granted, free of charge, to any person obtaining
+ a copy of this software and associated documentation files...

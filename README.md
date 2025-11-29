@@ -337,9 +337,9 @@ Le package expose des fonctions utilitaires :
 source /etc/js-auto-deployer/scripts/utils.sh
 
 # Fonctions disponibles
-fastpay_log "Message"
-fastpay_notify "Succès" "good"
-fastpay_health_check "http://localhost:3000"
+js_auto_deployer_log "Message"
+js_auto_deployer_notify "Succès" "good"
+js_auto_deployer_health_check "http://localhost:3000"
 ```
 
 ## 🔒 Sécurité

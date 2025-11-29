@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+
+# Script post-suppression
+if [ "$1" = "purge" ]; then
+    # Supprimer les fichiers de configuration si purge
+    if [ -d /etc/js-auto-deployer ]; then
+        rm -rf /etc/js-auto-deployer
+    fi
+    if [ -d /var/log/js-auto-deployer ]; then
+        rm -rf /var/log/js-auto-deployer
+    fi
+fi

@@ -1,0 +1,30 @@
+Source: js-auto-deployer
+Section: admin
+Priority: optional
+Maintainer: Votre Nom <votre.email@example.com>
+Build-Depends: debhelper (>= 11)
+Standards-Version: 4.1.3
+Homepage: https://github.com/votre-org/js-auto-deployer
+
+Package: js-auto-deployer
+Architecture: all
+Depends: ${misc:Depends},
+         bash (>= 4.0),
+         curl,
+         wget,
+         git,
+         nodejs (>= 16.0),
+         npm,
+         pm2
+Recommends: msmtp, msmtp-mta, mailutils
+Description: Déploiement automatisé pour projets JavaScript/TypeScript
+ Package de déploiement automatisé pour projets JavaScript/TypeScript
+ avec support pour Vue.js, React, Angular, Node.js, NestJS, etc.
+ .
+ Fonctionnalités:
+  - Déploiement automatique multi-projets avec PM2
+  - Intégration Git avec détection des changements
+  - Support multi-frameworks
+  - Notifications email avec rapports HTML
+  - Configuration par projet simple et intuitive
+  - Monitoring intégré avec statut en temps réel

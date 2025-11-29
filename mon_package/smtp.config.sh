@@ -1,11 +1,11 @@
 #!/bin/bash
-# Script d'installation automatique de la configuration SMTP pour FastPay
+# Script d'installation automatique de la configuration SMTP pour JS Auto Deployer
 # Serveur: mail89.lwspanel.com
 
 set -e
 
 echo "======================================"
-echo "🚀 Configuration SMTP FastPay"
+echo "🚀 Configuration SMTP JS Auto Deployer"
 echo "======================================"
 echo ""
 
@@ -29,22 +29,22 @@ fi
 # 3. Création de la configuration SMTP
 echo "⚙️  Création de /etc/msmtprc..."
 cat > /etc/msmtprc << 'EOF'
-# Configuration SMTP pour FastPay
+# Configuration SMTP pour JS Auto Deployer
 defaults
 logfile /var/log/msmtp.log
 
-account fastpay
+account js-auto-deployer
 host mail89.lwspanel.com
 port 465
-from contact@fastpay.website
-user contact@fastpay.website
-password nV3-V5PzDqS62z8
+from deploy@votredomaine.com
+user deploy@votredomaine.com
+password YOUR_PASSWORD_HERE
 auth on
 tls on
 tls_starttls off
 tls_certcheck off
 
-account default : fastpay
+account default : js-auto-deployer
 EOF
 
 # 4. Sécurisation des fichiers
@@ -66,10 +66,10 @@ echo "📝 Configuration du fichier de déploiement..."
 CURRENT_DIR=$(pwd)
 
 cat > "$CURRENT_DIR/deploy.config" << 'DEPLOYEOF'
-# Configuration Email pour les notifications de déploiement FastPay
-DEPLOY_EMAIL_TO="contact@fastpay.website"
-DEPLOY_EMAIL_FROM="contact@fastpay.website"
-DEPLOY_EMAIL_SUBJECT_PREFIX="[FastPay Deploy]"
+# Configuration Email pour les notifications de déploiement JS Auto Deployer
+DEPLOY_EMAIL_TO="admin@votredomaine.com"
+DEPLOY_EMAIL_FROM="deploy@votredomaine.com"
+DEPLOY_EMAIL_SUBJECT_PREFIX="[JS Auto Deployer]"
 
 # SMTP Configuration
 SMTP_ENABLED="true"
@@ -99,7 +99,7 @@ if [ -n "$TEST_EMAIL" ]; then
   > /var/log/msmtp.log
   
   # Test avec msmtp directement
-  echo -e "Subject: [FastPay] Test Configuration SMTP\nContent-Type: text/html; charset=UTF-8\n\n<h1>✅ Configuration SMTP Réussie</h1><p>Votre serveur SMTP est correctement configuré.</p><p><strong>Serveur:</strong> mail89.lwspanel.com<br><strong>Port:</strong> 465</p>" | msmtp "$TEST_EMAIL" 2>&1
+  echo -e "Subject: [JS Auto Deployer] Test Configuration SMTP\nContent-Type: text/html; charset=UTF-8\n\n<h1>✅ Configuration SMTP Réussie</h1><p>Votre serveur SMTP est correctement configuré pour JS Auto Deployer.</p><p><strong>Serveur:</strong> mail89.lwspanel.com<br><strong>Port:</strong> 465</p>" | msmtp "$TEST_EMAIL" 2>&1
   
   if [ $? -eq 0 ]; then
     echo "  ✅ Email envoyé avec succès !"

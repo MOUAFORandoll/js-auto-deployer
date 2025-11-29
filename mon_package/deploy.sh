@@ -19,8 +19,8 @@ else
   cat > "$CONFIG_FILE" << 'EOF'
 # Configuration Email pour les notifications de déploiement
 DEPLOY_EMAIL_TO="hari.randoll@gmail.com"
-DEPLOY_EMAIL_FROM="contact@fastpay.website"
-DEPLOY_EMAIL_SUBJECT_PREFIX="[FastPay Deploy]"
+DEPLOY_EMAIL_FROM="deploy@votredomaine.com"
+DEPLOY_EMAIL_SUBJECT_PREFIX="[JS Auto Deployer]"
 
 # SMTP Configuration (pour mailx/sendmail)
 # Si vous utilisez un SMTP externe, configurez postfix ou msmtp
@@ -456,34 +456,34 @@ EOF
 } | tee "$DEPLOY_LOG"
 
 echo "" | tee -a "$DEPLOY_LOG"
-echo "➡️ FastPay Dashboard" | tee -a "$DEPLOY_LOG"
-update_and_build "/var/www/fastpay-dashboard" "fastpay-dashboard" \
+echo "➡️ Dashboard" | tee -a "$DEPLOY_LOG"
+update_and_build "/var/www/dashboard" "dashboard" \
 "npm install && npm run build" \
-"PORT=2001 pm2 start npm --name fastpay-dashboard -- start"
+"PORT=2001 pm2 start npm --name dashboard -- start"
 
 echo "" | tee -a "$DEPLOY_LOG"
 echo "➡️ Payment Link (Vue SPA)" | tee -a "$DEPLOY_LOG"
-update_and_build "/var/www/fastpay-payment-link" "fastpay-pay-app" \
+update_and_build "/var/www/payment-link" "payment-app" \
 "npm install && npm run build" \
-"pm2 serve dist 2000 --name fastpay-pay-app --spa"
+"pm2 serve dist 2000 --name payment-app --spa"
 
 echo "" | tee -a "$DEPLOY_LOG"
-echo "➡️ FastPay Main API" | tee -a "$DEPLOY_LOG"
-update_and_build "/var/www/fastpay-main-api" "fastpay-all-apps" \
+echo "➡️ Main API" | tee -a "$DEPLOY_LOG"
+update_and_build "/var/www/main-api" "main-api" \
 "npm install && npm run build" \
 "pm2 start ecosystem.config.js"
 
 echo "" | tee -a "$DEPLOY_LOG"
 echo "➡️ Runner API" | tee -a "$DEPLOY_LOG"
-update_and_build "/var/www/fastpay-runner-api" "fastpay-runner-api" \
+update_and_build "/var/www/runner-api" "runner-api" \
 "npm install && npm run build" \
-"PORT=8084 pm2 start dist/main.js --name fastpay-runner-api"
+"PORT=8084 pm2 start dist/main.js --name runner-api"
 
 echo "" | tee -a "$DEPLOY_LOG"
 echo "➡️ Developer Docs (Nuxt SSR)" | tee -a "$DEPLOY_LOG"
-update_and_build "/var/www/fastpay-developer-docs" "fastpay-developer-docs" \
+update_and_build "/var/www/developer-docs" "developer-docs" \
 "npm install && npm run build" \
-"PORT=2002 pm2 start www/.output/server/index.mjs --name fastpay-developer-docs"
+"PORT=2002 pm2 start www/.output/server/index.mjs --name developer-docs"
 
 # ========================
 # 📊 Final Status

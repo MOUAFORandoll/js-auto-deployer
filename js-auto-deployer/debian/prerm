@@ -1,0 +1,6 @@
+#!/bin/bash
+set -e
+
+# Script pré-suppression
+# Optionnel: arrêter les services avant désinstallation
+# pm2 stop all 2>/dev/null || true
