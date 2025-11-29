@@ -12,26 +12,49 @@ Ce guide explique comment publier `js-auto-deployer` sur un dépôt APT pour le 
 
 ## 🚀 Démarrage Rapide
 
-### Initialisation Automatique
+### Construction Automatique en Une Commande
 
-Pour automatiser toutes les étapes d'initialisation (installation des dépendances, création de la structure, génération des fichiers debian/), utilisez le script `init.sh` :
+Le script `init.sh` automatise **toutes** les étapes de création du package DEB :
 
 ```bash
-# Initialisation complète (recommandé)
-sudo ./init.sh
+# Construction complète automatique (recommandé)
+sudo ./init.sh --build
 
-# Ou sans installation des dépendances
-./init.sh --skip-deps
+# Mode non-interactif (détecte automatiquement les métadonnées depuis git)
+sudo ./init.sh --non-interactive --build
 ```
 
 Le script `init.sh` effectue automatiquement :
 
 1. ✅ Installation des outils de construction DEB
-2. ✅ Création de la structure de répertoires
-3. ✅ Génération de tous les fichiers debian/
-4. ✅ Copie des fichiers du projet
+2. ✅ **Détection automatique** des métadonnées :
+   - Nom et email depuis `git config`
+   - Version depuis `package.json`
+   - Homepage depuis l'URL du dépôt git
+3. ✅ Création de la structure de répertoires
+4. ✅ Génération de tous les fichiers debian/
+5. ✅ Copie des fichiers du projet
+6. ✅ **Construction automatique du package DEB** (avec `--build`)
 
-**Note:** Si vous préférez faire l'initialisation manuellement, consultez les sections détaillées ci-dessous. Sinon, passez directement à la section [4. Construction du Paquet DEB](#4-construction-du-paquet-deb).
+**Résultat :** Le fichier `.deb` est créé directement, prêt à être installé ou publié !
+
+### Options du Script
+
+```bash
+# Initialisation seulement (sans construction)
+sudo ./init.sh
+
+# Construction automatique
+sudo ./init.sh --build
+
+# Mode non-interactif (utilise les valeurs détectées automatiquement)
+sudo ./init.sh --non-interactive --build
+
+# Sans installation des dépendances
+./init.sh --skip-deps --build
+```
+
+**Note:** Si vous préférez faire l'initialisation manuellement, consultez les sections détaillées ci-dessous.
 
 ---
 
@@ -95,8 +118,23 @@ Les fichiers debian/ sont générés automatiquement par `init.sh`. Pour une cr�
 
 ## 4. Construction du Paquet DEB
 
+> **💡 Astuce :** Si vous avez utilisé `./init.sh --build`, le package est déjà construit ! Passez à la section suivante.
+
+### Construction Automatique (Recommandé)
+
+Si vous n'avez pas utilisé `--build` lors de l'initialisation :
+
+```bash
+# Dans le répertoire js-auto-deployer créé par init.sh
+cd js-auto-deployer
+debuild -us -uc  # Sans signature GPG
+```
+
+### Construction Manuelle
+
 ```bash
 # Construire le paquet
+cd js-auto-deployer
 debuild -us -uc
 
 # Ou avec signature GPG
@@ -104,6 +142,22 @@ debuild -kYOUR_GPG_KEY_ID
 ```
 
 Le paquet sera créé dans le répertoire parent : `js-auto-deployer_1.0.0-1_all.deb`
+
+### Installation Locale (Test)
+
+Après la construction, vous pouvez installer le package localement pour tester :
+
+```bash
+# Installer le package
+sudo dpkg -i js-auto-deployer_*.deb
+
+# Résoudre les dépendances manquantes si nécessaire
+sudo apt-get install -f
+
+# Vérifier l'installation
+js-deploy --version
+js-status
+```
 
 ### 5. Création d'un Dépôt APT
 

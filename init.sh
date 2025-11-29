@@ -49,6 +49,8 @@ BASE_DIR="$(pwd)"
 DEB_STRUCTURE_DIR="${BASE_DIR}/${PACKAGE_NAME}"
 SKIP_DEPS=false
 SKIP_INSTALL=false
+AUTO_BUILD=false
+NON_INTERACTIVE=false
 
 # Vérification des permissions root
 check_root() {
@@ -181,20 +183,74 @@ create_deb_structure() {
 create_deb_files() {
     print_step "Étape 3 : Création des Fichiers DEB"
 
-    # Demander les informations du mainteneur
-    print_info "Configuration des métadonnées du package..."
+    # Détection automatique des informations du mainteneur
+    print_info "Détection automatique des métadonnées du package..."
     
-    read -p "Nom du mainteneur [Votre Nom]: " MAINTAINER_NAME
-    MAINTAINER_NAME=${MAINTAINER_NAME:-"Votre Nom"}
+    # Détecter le nom et l'email depuis git
+    GIT_NAME=$(git config user.name 2>/dev/null || echo "")
+    GIT_EMAIL=$(git config user.email 2>/dev/null || echo "")
+    GIT_REMOTE_URL=$(git config --get remote.origin.url 2>/dev/null || echo "")
     
-    read -p "Email du mainteneur [votre.email@example.com]: " MAINTAINER_EMAIL
-    MAINTAINER_EMAIL=${MAINTAINER_EMAIL:-"votre.email@example.com"}
+    # Extraire l'URL GitHub si possible
+    if [[ "$GIT_REMOTE_URL" =~ github\.com[:/]([^/]+)/([^/]+) ]]; then
+        GIT_USER="${BASH_REMATCH[1]}"
+        GIT_REPO="${BASH_REMATCH[2]%.git}"
+        DETECTED_HOMEPAGE="https://github.com/${GIT_USER}/${GIT_REPO}"
+    else
+        DETECTED_HOMEPAGE="https://github.com/MOUAFORandoll/js-auto-deployer.git"
+    fi
     
-    read -p "Homepage GitHub [https://github.com/votre-org/js-auto-deployer]: " HOMEPAGE
-    HOMEPAGE=${HOMEPAGE:-"https://github.com/votre-org/js-auto-deployer"}
+    # Valeurs par défaut avec informations de l'auteur
+    AUTHOR_NAME="MOUAFO RANDOLL"
+    AUTHOR_EMAIL="hari.randoll@gmail.com"
+    AUTHOR_HOMEPAGE="https://github.com/MOUAFORandoll/js-auto-deployer.git"
     
-    read -p "Version du package [1.0.0]: " PACKAGE_VERSION
-    PACKAGE_VERSION=${PACKAGE_VERSION:-"1.0.0"}
+    # Valeurs par défaut intelligentes (détection depuis git ou utilisation des infos auteur)
+    DEFAULT_NAME="${GIT_NAME:-"${AUTHOR_NAME}"}"
+    DEFAULT_EMAIL="${GIT_EMAIL:-"${AUTHOR_EMAIL}"}"
+    DEFAULT_HOMEPAGE="${DETECTED_HOMEPAGE:-"${AUTHOR_HOMEPAGE}"}"
+    
+    # Lire la version depuis package.json si disponible
+    if [ -f "package.json" ]; then
+        DETECTED_VERSION=$(grep -E '"version"' package.json | head -1 | sed -E 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/' 2>/dev/null || echo "")
+    fi
+    
+    # Version par défaut si non trouvée
+    DETECTED_VERSION="${DETECTED_VERSION:-"1.0.0"}"
+    
+    if [ "$NON_INTERACTIVE" = true ]; then
+        # Mode non-interactif : utiliser les valeurs détectées
+        MAINTAINER_NAME="${DEFAULT_NAME}"
+        MAINTAINER_EMAIL="${DEFAULT_EMAIL}"
+        HOMEPAGE="${DEFAULT_HOMEPAGE}"
+        PACKAGE_VERSION="${DETECTED_VERSION}"
+        print_info "Mode non-interactif : utilisation des valeurs détectées"
+        print_info "  Mainteneur: ${MAINTAINER_NAME} <${MAINTAINER_EMAIL}>"
+        print_info "  Homepage: ${HOMEPAGE}"
+        print_info "  Version: ${PACKAGE_VERSION}"
+    else
+        # Mode interactif avec valeurs par défaut
+        print_info "Configuration des métadonnées du package..."
+        echo ""
+        print_info "Valeurs détectées automatiquement :"
+        echo "  Nom: ${DEFAULT_NAME}"
+        echo "  Email: ${DEFAULT_EMAIL}"
+        echo "  Homepage: ${DEFAULT_HOMEPAGE}"
+        echo "  Version: ${DETECTED_VERSION}"
+        echo ""
+        
+        read -p "Nom du mainteneur [${DEFAULT_NAME}]: " MAINTAINER_NAME
+        MAINTAINER_NAME=${MAINTAINER_NAME:-"${DEFAULT_NAME}"}
+        
+        read -p "Email du mainteneur [${DEFAULT_EMAIL}]: " MAINTAINER_EMAIL
+        MAINTAINER_EMAIL=${MAINTAINER_EMAIL:-"${DEFAULT_EMAIL}"}
+        
+        read -p "Homepage GitHub [${DEFAULT_HOMEPAGE}]: " HOMEPAGE
+        HOMEPAGE=${HOMEPAGE:-"${DEFAULT_HOMEPAGE}"}
+        
+        read -p "Version du package [${DETECTED_VERSION}]: " PACKAGE_VERSION
+        PACKAGE_VERSION=${PACKAGE_VERSION:-"${DETECTED_VERSION}"}
+    fi
     
     CURRENT_DATE=$(date -R)
     CURRENT_YEAR=$(date +%Y)
@@ -258,7 +314,7 @@ Upstream-Name: js-auto-deployer
 Source: ${HOMEPAGE}
 
 Files: *
-Copyright: ${CURRENT_YEAR} ${MAINTAINER_NAME}
+Copyright: ${CURRENT_YEAR} MOUAFO RANDOLL <hari.randoll@gmail.com>
 License: MIT
 
 License: MIT
@@ -417,6 +473,7 @@ copy_project_files() {
     # Copier les scripts
     if [ -d "scripts" ]; then
         cp -r scripts "${DEB_STRUCTURE_DIR}/"
+        chmod +x "${DEB_STRUCTURE_DIR}/scripts/"*.sh 2>/dev/null || true
         print_success "Scripts copiés"
     else
         print_warning "Répertoire scripts/ non trouvé"
@@ -434,11 +491,59 @@ copy_project_files() {
     for file in install.sh configure.sh README.md QUICKSTART.md; do
         if [ -f "$file" ]; then
             cp "$file" "${DEB_STRUCTURE_DIR}/"
+            if [[ "$file" == *.sh ]]; then
+                chmod +x "${DEB_STRUCTURE_DIR}/$file"
+            fi
             print_success "$file copié"
         else
             print_warning "$file non trouvé"
         fi
     done
+}
+
+# Construire le package DEB
+build_deb_package() {
+    print_step "Construction du Package DEB"
+    
+    if ! command -v debuild &> /dev/null; then
+        print_error "debuild n'est pas disponible"
+        print_info "Installez avec: sudo apt-get install devscripts debhelper"
+        return 1
+    fi
+    
+    print_info "Construction du package dans ${DEB_STRUCTURE_DIR}..."
+    
+    cd "${DEB_STRUCTURE_DIR}"
+    
+    # Nettoyer les anciens builds
+    if [ -f debian/files ]; then
+        print_info "Nettoyage des anciens builds..."
+        debuild clean 2>/dev/null || true
+    fi
+    
+    # Construire le package
+    print_info "Lancement de debuild (cela peut prendre quelques minutes)..."
+    
+    if debuild -us -uc 2>&1 | tee /tmp/debuild.log; then
+        print_success "Package DEB construit avec succès !"
+        
+        # Trouver le fichier .deb créé
+        DEB_FILE=$(find "${BASE_DIR}" -maxdepth 1 -name "js-auto-deployer_*.deb" -type f | head -1)
+        
+        if [ -n "$DEB_FILE" ] && [ -f "$DEB_FILE" ]; then
+            DEB_SIZE=$(du -h "$DEB_FILE" | cut -f1)
+            print_success "Package créé: $(basename "$DEB_FILE") (${DEB_SIZE})"
+            print_info "Emplacement: ${DEB_FILE}"
+            return 0
+        else
+            print_warning "Package construit mais fichier .deb non trouvé"
+            return 1
+        fi
+    else
+        print_error "Échec de la construction du package"
+        print_info "Consultez les logs: /tmp/debuild.log"
+        return 1
+    fi
 }
 
 # Afficher le résumé final
@@ -459,23 +564,31 @@ show_summary() {
     
     print_header "📋 Prochaines Étapes"
     echo ""
-    echo -e "${CYAN}1.${NC} Vérifiez et modifiez les fichiers debian/ si nécessaire"
-    echo "   cd ${DEB_STRUCTURE_DIR}"
-    echo "   nano debian/control  # Modifier les métadonnées"
-    echo ""
-    echo -e "${CYAN}2.${NC} Construisez le package DEB:"
-    echo "   cd ${DEB_STRUCTURE_DIR}"
-    echo "   debuild -us -uc  # Sans signature GPG"
-    echo "   # ou"
-    echo "   debuild -kYOUR_GPG_KEY_ID  # Avec signature GPG"
-    echo ""
-    echo -e "${CYAN}3.${NC} Le paquet sera créé dans: ${BASE_DIR}/"
-    echo "   js-auto-deployer_*.deb"
-    echo ""
-    echo -e "${CYAN}4.${NC} Consultez le GUIDE_APT_PUBLICATION.md pour:"
-    echo "   - Créer un dépôt APT"
-    echo "   - Configurer les clients"
-    echo "   - Publier le package"
+    
+    if [ "$AUTO_BUILD" = false ]; then
+        echo -e "${CYAN}1.${NC} (Optionnel) Vérifiez et modifiez les fichiers debian/ si nécessaire"
+        echo "   cd ${DEB_STRUCTURE_DIR}"
+        echo "   nano debian/control  # Modifier les métadonnées"
+        echo ""
+        echo -e "${CYAN}2.${NC} Construisez le package DEB:"
+        echo "   cd ${DEB_STRUCTURE_DIR}"
+        echo "   debuild -us -uc  # Sans signature GPG"
+        echo ""
+        echo -e "${CYAN}3.${NC} Le paquet sera créé dans: ${BASE_DIR}/"
+        echo "   js-auto-deployer_*.deb"
+        echo ""
+        echo -e "${CYAN}4.${NC} Consultez le GUIDE_APT_PUBLICATION.md pour:"
+        echo "   - Créer un dépôt APT"
+        echo "   - Configurer les clients"
+        echo "   - Publier le package"
+    else
+        echo -e "${CYAN}✓${NC} Le package DEB a été construit automatiquement !"
+        echo ""
+        echo -e "${CYAN}Prochaines étapes:${NC}"
+        echo "  1. Le fichier .deb est dans: ${BASE_DIR}/"
+        echo "  2. Installez-le localement avec: sudo dpkg -i ${BASE_DIR}/js-auto-deployer_*.deb"
+        echo "  3. Consultez GUIDE_APT_PUBLICATION.md pour créer un dépôt APT"
+    fi
     echo ""
     print_success "✨ Initialisation complète terminée !"
 }
@@ -488,9 +601,11 @@ JS Auto Deployer - Script d'Initialisation DEB
 Usage: $0 [OPTIONS]
 
 OPTIONS:
-    --skip-deps       Ignorer l'installation des dépendances système
-    --skip-install    Ignorer les vérifications de permissions root
-    --help            Afficher cette aide
+    --skip-deps          Ignorer l'installation des dépendances système
+    --skip-install       Ignorer les vérifications de permissions root
+    --build              Construire automatiquement le package DEB après l'initialisation
+    --non-interactive    Mode non-interactif (utilise les valeurs détectées automatiquement)
+    --help               Afficher cette aide
 
 DESCRIPTION:
     Ce script automatise toutes les étapes d'initialisation pour créer
@@ -502,9 +617,11 @@ DESCRIPTION:
     4. Copie des fichiers du projet
 
 EXAMPLES:
-    $0                    # Initialisation complète
-    $0 --skip-deps        # Ignorer l'installation des dépendances
-    sudo $0               # Avec permissions root pour tout installer
+    $0                           # Initialisation complète interactive
+    $0 --build                   # Initialisation + construction automatique du package
+    $0 --non-interactive --build # Mode automatique complet (sans questions)
+    $0 --skip-deps               # Ignorer l'installation des dépendances
+    sudo $0 --build              # Avec permissions root + construction automatique
 
 Pour plus d'informations, consultez GUIDE_APT_PUBLICATION.md
 EOF
@@ -521,6 +638,14 @@ main() {
                 ;;
             --skip-install)
                 SKIP_INSTALL=true
+                shift
+                ;;
+            --build)
+                AUTO_BUILD=true
+                shift
+                ;;
+            --non-interactive)
+                NON_INTERACTIVE=true
                 shift
                 ;;
             --help|-h)
@@ -547,6 +672,12 @@ main() {
     create_deb_structure
     create_deb_files
     copy_project_files
+    
+    # Construction automatique si demandée
+    if [ "$AUTO_BUILD" = true ]; then
+        build_deb_package
+    fi
+    
     show_summary
 }
 
