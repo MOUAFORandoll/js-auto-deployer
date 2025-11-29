@@ -1,7 +1,7 @@
 Source: js-auto-deployer
 Section: admin
 Priority: optional
-Maintainer: Votre Nom <votre.email@example.com>
+Maintainer: MOUAFO RANFOLL <hari.randoll@gmail.com>
 Build-Depends: debhelper (>= 11)
 Standards-Version: 4.1.3
 Homepage: https://github.com/votre-org/js-auto-deployer

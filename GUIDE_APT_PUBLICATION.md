@@ -10,7 +10,35 @@ Ce guide explique comment publier `js-auto-deployer` sur un dépôt APT pour le 
 - Clés GPG pour signer les paquets
 - Serveur web pour héberger le dépôt
 
-## 🚀 Étapes de Publication
+## 🚀 Démarrage Rapide
+
+### Initialisation Automatique
+
+Pour automatiser toutes les étapes d'initialisation (installation des dépendances, création de la structure, génération des fichiers debian/), utilisez le script `init.sh` :
+
+```bash
+# Initialisation complète (recommandé)
+sudo ./init.sh
+
+# Ou sans installation des dépendances
+./init.sh --skip-deps
+```
+
+Le script `init.sh` effectue automatiquement :
+
+1. ✅ Installation des outils de construction DEB
+2. ✅ Création de la structure de répertoires
+3. ✅ Génération de tous les fichiers debian/
+4. ✅ Copie des fichiers du projet
+
+**Note:** Si vous préférez faire l'initialisation manuellement, consultez les sections détaillées ci-dessous. Sinon, passez directement à la section [4. Construction du Paquet DEB](#4-construction-du-paquet-deb).
+
+---
+
+## 📝 Initialisation Manuelle (Optionnel)
+
+<details>
+<summary>Cliquez pour voir les étapes manuelles d'initialisation</summary>
 
 ### 1. Préparation de l'Environnement
 
@@ -59,194 +87,13 @@ js-auto-deployer/
 
 ### 3. Création des Fichiers DEB
 
-#### 3.1. Créer le répertoire de travail
+Les fichiers debian/ sont générés automatiquement par `init.sh`. Pour une création manuelle, consultez le script `init.sh` comme référence.
 
-```bash
-mkdir -p ~/deb-package/js-auto-deployer
-cd ~/deb-package/js-auto-deployer
-```
+</details>
 
-#### 3.2. Copier les fichiers du package
+---
 
-```bash
-# Copier tous les fichiers du package
-cp -r /chemin/vers/js-auto-deployer/* .
-
-# Créer la structure DEB
-mkdir -p debian
-```
-
-#### 3.3. Créer `debian/control`
-
-```bash
-cat > debian/control << 'EOF'
-Source: js-auto-deployer
-Section: admin
-Priority: optional
-Maintainer: Votre Nom <votre.email@example.com>
-Build-Depends: debhelper (>= 11)
-Standards-Version: 4.1.3
-Homepage: https://github.com/votre-org/js-auto-deployer
-
-Package: js-auto-deployer
-Architecture: all
-Depends: ${misc:Depends},
-         bash (>= 4.0),
-         curl,
-         wget,
-         git,
-         nodejs (>= 16.0),
-         npm,
-         pm2
-Recommends: msmtp, msmtp-mta, mailutils
-Description: Déploiement automatisé pour projets JavaScript/TypeScript
- Package de déploiement automatisé pour projets JavaScript/TypeScript
- avec support pour Vue.js, React, Angular, Node.js, NestJS, etc.
- .
- Fonctionnalités:
-  - Déploiement automatique multi-projets avec PM2
-  - Intégration Git avec détection des changements
-  - Support multi-frameworks
-  - Notifications email avec rapports HTML
-  - Configuration par projet simple et intuitive
-  - Monitoring intégré avec statut en temps réel
-EOF
-```
-
-#### 3.4. Créer `debian/changelog`
-
-```bash
-cat > debian/changelog << 'EOF'
-js-auto-deployer (1.0.0-1) unstable; urgency=medium
-
-  * Version initiale
-  * Déploiement automatisé pour projets JavaScript/TypeScript
-  * Support PM2, Git, notifications email
-
- -- Votre Nom <votre.email@example.com>  $(date -R)
-EOF
-```
-
-#### 3.5. Créer `debian/copyright`
-
-```bash
-cat > debian/copyright << 'EOF'
-Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: js-auto-deployer
-Source: https://github.com/votre-org/js-auto-deployer
-
-Files: *
-Copyright: $(date +%Y) Votre Nom
-License: MIT
-
-License: MIT
- MIT License
- .
- Permission is hereby granted, free of charge, to any person obtaining
- a copy of this software and associated documentation files...
-EOF
-```
-
-#### 3.6. Créer `debian/rules`
-
-```bash
-cat > debian/rules << 'EOF'
-#!/usr/bin/make -f
-
-%:
-	dh $@
-
-override_dh_auto_install:
-	# Installer les fichiers dans le paquet
-	mkdir -p $(CURDIR)/debian/js-auto-deployer/opt/js-auto-deployer
-	mkdir -p $(CURDIR)/debian/js-auto-deployer/etc/js-auto-deployer
-	mkdir -p $(CURDIR)/debian/js-auto-deployer/usr/local/bin
-	mkdir -p $(CURDIR)/debian/js-auto-deployer/var/log/js-auto-deployer
-
-	# Copier les fichiers
-	cp -r scripts $(CURDIR)/debian/js-auto-deployer/opt/js-auto-deployer/
-	cp -r config $(CURDIR)/debian/js-auto-deployer/etc/js-auto-deployer/
-	cp install.sh $(CURDIR)/debian/js-auto-deployer/opt/js-auto-deployer/
-	cp configure.sh $(CURDIR)/debian/js-auto-deployer/opt/js-auto-deployer/
-	cp README.md $(CURDIR)/debian/js-auto-deployer/opt/js-auto-deployer/
-	cp QUICKSTART.md $(CURDIR)/debian/js-auto-deployer/opt/js-auto-deployer/
-
-	# Créer les liens symboliques
-	ln -s /opt/js-auto-deployer/scripts/deploy.sh $(CURDIR)/debian/js-auto-deployer/usr/local/bin/js-deploy
-	ln -s /opt/js-auto-deployer/configure.sh $(CURDIR)/debian/js-auto-deployer/usr/local/bin/js-configure
-	ln -s /opt/js-auto-deployer/scripts/status.sh $(CURDIR)/debian/js-auto-deployer/usr/local/bin/js-status
-	ln -s /opt/js-auto-deployer/scripts/smtp.config.sh $(CURDIR)/debian/js-auto-deployer/usr/local/bin/js-setup-email
-	ln -s /opt/js-auto-deployer/scripts/test-email.sh $(CURDIR)/debian/js-auto-deployer/usr/local/bin/js-test-email
-	ln -s /opt/js-auto-deployer/scripts/uninstall.sh $(CURDIR)/debian/js-auto-deployer/usr/local/bin/js-uninstall
-
-override_dh_installdocs:
-	dh_installdocs README.md QUICKSTART.md
-EOF
-
-chmod +x debian/rules
-```
-
-#### 3.7. Créer `debian/postinst` (script post-installation)
-
-```bash
-cat > debian/postinst << 'EOF'
-#!/bin/bash
-set -e
-
-# Script post-installation
-echo "Configuration de js-auto-deployer..."
-
-# Créer les répertoires nécessaires
-mkdir -p /var/log/js-auto-deployer
-chmod 755 /var/log/js-auto-deployer
-
-# Créer le fichier de configuration s'il n'existe pas
-if [ ! -f /etc/js-auto-deployer/config/deploy.yml ]; then
-    if [ -f /etc/js-auto-deployer/config/deploy.yml.template ]; then
-        cp /etc/js-auto-deployer/config/deploy.yml.template /etc/js-auto-deployer/config/deploy.yml
-        chmod 600 /etc/js-auto-deployer/config/deploy.yml
-    fi
-fi
-
-# Vérifier PM2
-if ! command -v pm2 &> /dev/null; then
-    echo "⚠️  PM2 n'est pas installé. Installez-le avec: npm install -g pm2"
-fi
-
-echo "✅ js-auto-deployer installé avec succès!"
-echo ""
-echo "Prochaines étapes:"
-echo "  1. Configurez vos projets: sudo js-configure"
-echo "  2. Lancez le déploiement: sudo js-deploy"
-echo ""
-EOF
-
-chmod +x debian/postinst
-```
-
-#### 3.8. Créer `debian/postrm` (script post-suppression)
-
-```bash
-cat > debian/postrm << 'EOF'
-#!/bin/bash
-set -e
-
-# Script post-suppression
-if [ "$1" = "purge" ]; then
-    # Supprimer les fichiers de configuration si purge
-    if [ -d /etc/js-auto-deployer ]; then
-        rm -rf /etc/js-auto-deployer
-    fi
-    if [ -d /var/log/js-auto-deployer ]; then
-        rm -rf /var/log/js-auto-deployer
-    fi
-fi
-EOF
-
-chmod +x debian/postrm
-```
-
-### 4. Construction du Paquet DEB
+## 4. Construction du Paquet DEB
 
 ```bash
 # Construire le paquet
