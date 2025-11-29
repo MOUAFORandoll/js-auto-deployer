@@ -461,6 +461,11 @@ QUICKSTART.md /opt/js-auto-deployer/
 EOF
     print_success "debian/js-auto-deployer.install créé"
 
+    # debian/compat (spécifie le niveau de compatibilité debhelper)
+    print_info "Création de debian/compat..."
+    echo "11" > "${DEB_STRUCTURE_DIR}/debian/compat"
+    print_success "debian/compat créé"
+
     print_success "Tous les fichiers debian/ ont été créés"
 }
 
@@ -515,33 +520,93 @@ build_deb_package() {
     
     cd "${DEB_STRUCTURE_DIR}"
     
-    # Nettoyer les anciens builds
-    if [ -f debian/files ]; then
-        print_info "Nettoyage des anciens builds..."
-        debuild clean 2>/dev/null || true
+    # Vérifier que debian/compat existe (nécessaire pour debhelper)
+    if [ ! -f debian/compat ]; then
+        print_warning "Fichier debian/compat manquant, création..."
+        echo "11" > debian/compat
     fi
+    
+    # Nettoyer les anciens builds
+    if [ -f debian/files ] || [ -d debian/js-auto-deployer ]; then
+        print_info "Nettoyage des anciens builds..."
+        rm -rf debian/js-auto-deployer debian/files debian/.debhelper 2>/dev/null || true
+        # Ne pas lancer fakeroot debian/rules clean car cela peut échouer si debhelper n'est pas configuré
+    fi
+    
+    # Créer le fichier .orig.tar.gz si nécessaire (requis par debuild)
+    local orig_file="${BASE_DIR}/js-auto-deployer_${PACKAGE_VERSION}.orig.tar.gz"
+    if [ ! -f "$orig_file" ]; then
+        print_info "Création du fichier .orig.tar.gz..."
+        cd "${BASE_DIR}"
+        
+        # Créer une copie temporaire sans le répertoire debian
+        local temp_dir=$(mktemp -d)
+        cp -r js-auto-deployer "$temp_dir/" 2>/dev/null || {
+            print_warning "Impossible de créer .orig.tar.gz automatiquement"
+            print_info "Continuez, debuild vous demandera de continuer"
+        }
+        
+        if [ -d "$temp_dir/js-auto-deployer" ]; then
+            rm -rf "$temp_dir/js-auto-deployer/debian" 2>/dev/null || true
+            cd "$temp_dir"
+            tar -czf "$orig_file" js-auto-deployer/ 2>/dev/null && {
+                print_success "Fichier .orig.tar.gz créé"
+            } || {
+                print_warning "Échec de création du .orig.tar.gz, debuild continuera"
+            }
+            cd "${BASE_DIR}"
+            rm -rf "$temp_dir"
+        fi
+    else
+        print_info "Fichier .orig.tar.gz existe déjà"
+    fi
+    
+    cd "${DEB_STRUCTURE_DIR}"
     
     # Construire le package
     print_info "Lancement de debuild (cela peut prendre quelques minutes)..."
+    print_warning "Si debuild demande de continuer sans .orig, répondez 'y'"
     
-    if debuild -us -uc 2>&1 | tee /tmp/debuild.log; then
-        print_success "Package DEB construit avec succès !"
-        
-        # Trouver le fichier .deb créé
-        DEB_FILE=$(find "${BASE_DIR}" -maxdepth 1 -name "js-auto-deployer_*.deb" -type f | head -1)
-        
-        if [ -n "$DEB_FILE" ] && [ -f "$DEB_FILE" ]; then
-            DEB_SIZE=$(du -h "$DEB_FILE" | cut -f1)
-            print_success "Package créé: $(basename "$DEB_FILE") (${DEB_SIZE})"
-            print_info "Emplacement: ${DEB_FILE}"
-            return 0
+    # Capturer la sortie
+    local build_output="/tmp/debuild-$(date +%s).log"
+    
+    # Lancer debuild avec gestion automatique de la réponse
+    # Utiliser yes pour répondre automatiquement à la question sur .orig
+    print_info "Démarrage de la construction (cela peut prendre quelques minutes)..."
+    
+    # Lancer debuild et capturer le résultat correctement
+    # Créer un pipe nommé pour capturer le code de retour
+    set +e  # Désactiver set -e temporairement pour gérer l'erreur
+    echo "y" | debuild -us -uc 2>&1 | tee "$build_output"
+    BUILD_EXIT_CODE=${PIPESTATUS[0]}
+    set -e  # Réactiver set -e
+    
+    # Toujours vérifier si un fichier .deb a été créé (même en cas d'erreur partielle)
+    DEB_FILE=$(find "${BASE_DIR}" -maxdepth 1 -name "js-auto-deployer_*.deb" -type f 2>/dev/null | head -1)
+    
+    if [ -n "$DEB_FILE" ] && [ -f "$DEB_FILE" ]; then
+        DEB_SIZE=$(du -h "$DEB_FILE" | cut -f1)
+        if [ "$BUILD_EXIT_CODE" -eq 0 ]; then
+            print_success "Package DEB construit avec succès !"
         else
-            print_warning "Package construit mais fichier .deb non trouvé"
-            return 1
+            print_warning "Des erreurs ont été rencontrées mais un fichier .deb a été généré"
         fi
+        print_success "Package créé: $(basename "$DEB_FILE") (${DEB_SIZE})"
+        print_info "Emplacement: ${DEB_FILE}"
+        return 0
     else
         print_error "Échec de la construction du package"
-        print_info "Consultez les logs: /tmp/debuild.log"
+        if [ "$BUILD_EXIT_CODE" -ne 0 ]; then
+            print_info "Code de retour: $BUILD_EXIT_CODE"
+        fi
+        print_info "Consultez les logs détaillés: $build_output"
+        echo ""
+        print_info "Solutions possibles:"
+        print_info "  1. Vérifiez que le fichier debian/compat existe (doit contenir '11')"
+        print_info "  2. Vérifiez les erreurs dans le log ci-dessus"
+        print_info "  3. Essayez de construire manuellement:"
+        print_info "     cd ${DEB_STRUCTURE_DIR}"
+        print_info "     debuild -us -uc"
         return 1
     fi
 }
