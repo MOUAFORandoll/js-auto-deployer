@@ -656,6 +656,24 @@ show_summary() {
     fi
     echo ""
     print_success "✨ Initialisation complète terminée !"
+    print_header "🚀 Installation recommandée"
+    echo ""
+    echo "# Installe toutes les dépendances Debian :"
+    echo "sudo apt-get update"
+    echo "sudo apt-get install -y nodejs npm curl git"
+    echo ""
+    echo "# Installe pm2 globalement :"
+    echo "sudo npm install -g pm2"
+    echo ""
+    echo "# Installe le .deb généré :"
+    echo "sudo dpkg -i js-auto-deployer_*.deb"
+    echo ""
+    echo "# Si dpkg affiche des erreurs de dépendances :"
+    echo "sudo apt-get install -f"
+    echo ""
+    echo "# Commandes désormais accessibles : js-deploy, js-configure, js-status, etc."
+    echo "js-deploy --help"
+    echo ""
 }
 
 # Afficher l'aide
@@ -690,6 +708,24 @@ EXAMPLES:
 
 Pour plus d'informations, consultez GUIDE_APT_PUBLICATION.md
 EOF
+    print_header "🚀 Installation recommandée"
+    echo ""
+    echo "# Installe toutes les dépendances Debian :"
+    echo "sudo apt-get update"
+    echo "sudo apt-get install -y nodejs npm curl git"
+    echo ""
+    echo "# Installe pm2 globalement :"
+    echo "sudo npm install -g pm2"
+    echo ""
+    echo "# Installe le .deb généré :"
+    echo "sudo dpkg -i js-auto-deployer_*.deb"
+    echo ""
+    echo "# Si dpkg affiche des erreurs de dépendances :"
+    echo "sudo apt-get install -f"
+    echo ""
+    echo "# Commandes désormais accessibles : js-deploy, js-configure, js-status, etc."
+    echo "js-deploy --help"
+    echo ""
 }
 
 # Fonction principale

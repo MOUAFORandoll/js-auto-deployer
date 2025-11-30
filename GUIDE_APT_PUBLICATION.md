@@ -101,8 +101,7 @@ js-auto-deployer/
 ├── opt/
 │   └── js-auto-deployer/
 ├── usr/
-│   └── local/
-│       └── bin/
+│   └── bin/
 └── var/
     └── log/
         └── js-auto-deployer/
@@ -145,19 +144,25 @@ Le paquet sera créé dans le répertoire parent : `js-auto-deployer_1.0.0-1_all
 
 ### Installation Locale (Test)
 
-Après la construction, vous pouvez installer le package localement pour tester :
+**⚠️ Dépendances nécessaires :**
+
+- nodejs >= 16
+- npm
+- pm2 (installé avec : sudo npm install -g pm2)
+
+### Installation rapide recommandée
 
 ```bash
-# Installer le package
+sudo apt-get update
+sudo apt-get install -y nodejs npm curl git
+sudo npm install -g pm2
 sudo dpkg -i js-auto-deployer_*.deb
-
-# Résoudre les dépendances manquantes si nécessaire
 sudo apt-get install -f
-
-# Vérifier l'installation
-js-deploy --version
-js-status
 ```
+
+Les commandes seront disponibles directement dans /usr/bin/ :
+
+- js-deploy js-configure js-status js-setup-email js-test-email js-uninstall
 
 ### 5. Création d'un Dépôt APT
 
