@@ -10,7 +10,7 @@ set -e
 
 # Couleurs
 RED='\033[0;31m'
-GREEN='\033[0;32m'
+GREEN='\0333[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 PURPLE='\033[0;35m'
@@ -167,8 +167,8 @@ create_deb_structure() {
     print_success "opt/js-auto-deployer/ créé"
 
     # Structure usr/
-    mkdir -p "${DEB_STRUCTURE_DIR}/usr/local/bin"
-    print_success "usr/local/bin/ créé"
+    mkdir -p "${DEB_STRUCTURE_DIR}/usr/bin"
+    print_success "usr/bin/ créé"
 
     # Structure var/
     mkdir -p "${DEB_STRUCTURE_DIR}/var/log/js-auto-deployer"
@@ -352,7 +352,7 @@ override_dh_auto_install:
 	# Installer les fichiers dans le paquet
 	mkdir -p $(CURDIR)/debian/js-auto-deployer/opt/js-auto-deployer
 	mkdir -p $(CURDIR)/debian/js-auto-deployer/etc/js-auto-deployer
-	mkdir -p $(CURDIR)/debian/js-auto-deployer/usr/local/bin
+	mkdir -p $(CURDIR)/debian/js-auto-deployer/usr/bin
 	mkdir -p $(CURDIR)/debian/js-auto-deployer/var/log/js-auto-deployer
 
 	# Copier les fichiers
@@ -364,12 +364,12 @@ override_dh_auto_install:
 	cp QUICKSTART.md $(CURDIR)/debian/js-auto-deployer/opt/js-auto-deployer/
 
 	# Créer les liens symboliques
-	ln -s /opt/js-auto-deployer/scripts/deploy.sh $(CURDIR)/debian/js-auto-deployer/usr/local/bin/js-deploy
-	ln -s /opt/js-auto-deployer/configure.sh $(CURDIR)/debian/js-auto-deployer/usr/local/bin/js-configure
-	ln -s /opt/js-auto-deployer/scripts/status.sh $(CURDIR)/debian/js-auto-deployer/usr/local/bin/js-status
-	ln -s /opt/js-auto-deployer/scripts/smtp.config.sh $(CURDIR)/debian/js-auto-deployer/usr/local/bin/js-setup-email
-	ln -s /opt/js-auto-deployer/scripts/test-email.sh $(CURDIR)/debian/js-auto-deployer/usr/local/bin/js-test-email
-	ln -s /opt/js-auto-deployer/scripts/uninstall.sh $(CURDIR)/debian/js-auto-deployer/usr/local/bin/js-uninstall
+	ln -s /opt/js-auto-deployer/scripts/deploy.sh $(CURDIR)/debian/js-auto-deployer/usr/bin/js-deploy
+	ln -s /opt/js-auto-deployer/configure.sh $(CURDIR)/debian/js-auto-deployer/usr/bin/js-configure
+	ln -s /opt/js-auto-deployer/scripts/status.sh $(CURDIR)/debian/js-auto-deployer/usr/bin/js-status
+	ln -s /opt/js-auto-deployer/scripts/smtp.config.sh $(CURDIR)/debian/js-auto-deployer/usr/bin/js-setup-email
+	ln -s /opt/js-auto-deployer/scripts/test-email.sh $(CURDIR)/debian/js-auto-deployer/usr/bin/js-test-email
+	ln -s /opt/js-auto-deployer/scripts/uninstall.sh $(CURDIR)/debian/js-auto-deployer/usr/bin/js-uninstall
 
 override_dh_installdocs:
 	dh_installdocs README.md QUICKSTART.md
